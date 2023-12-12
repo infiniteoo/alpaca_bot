@@ -1,10 +1,16 @@
 import alpaca_trade_api as tradeapi
 import time
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 
 # Alpaca API credentials
-API_KEY = 'YOUR_API_KEY'
-API_SECRET = 'YOUR_API_SECRET'
-BASE_URL = 'https://paper-api.alpaca.markets'  # Paper trading URL
+API_KEY = os.getenv('TRADER_KEY')
+API_SECRET = os.getenv('TRADER_SECRET')
+BASE_URL = os.getenv('TRADER_ENDPOINT')
 
 # Initialize Alpaca API
 api = tradeapi.REST(API_KEY, API_SECRET, BASE_URL, api_version='v1')
