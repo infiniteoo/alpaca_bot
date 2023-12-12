@@ -1,10 +1,11 @@
 import alpaca_trade_api as api
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import yfinance as yf
 import os
 from dotenv import load_dotenv
 import requests
+import json
 import time
 from Colors import Colors as c
 import sys
@@ -17,11 +18,20 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 # Load environment variables
 load_dotenv()
 
+# Read the configuration from the JSON file
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
+
 # Alpaca API credentials
 API_KEY = os.getenv('TRADER_KEY')
 API_SECRET = os.getenv('TRADER_SECRET')
 BASE_URL = os.getenv('TRADER_ENDPOINT')  # Paper trading URL
 account_id = os.getenv('ACCOUNT_ID')
+
+symbol = config["symbol"]
+short_window = config["short_window"]
+long_window = config["long_window"]
+lookback = config["lookback"]
 
 
 api = TradingClient(f'{API_KEY}', f'{API_SECRET}')
@@ -62,7 +72,7 @@ def is_market_open():
     try:
        # Get the market clock
         clock = api.get_clock()
-
+           
         # Check if the market is open
         if clock.is_open:
             print("The market is open.")
@@ -80,7 +90,7 @@ def is_market_open():
 def get_historical_data(symbol):
     ticker_symbol = symbol.upper()
     now = datetime.now()
-    start_date = now - timedelta(days=100)  # Adjust as needed
+    start_date = now - timedelta(days=lookback)  # Adjust as needed
 
     try:
         # Request historical data from Alpaca
@@ -127,11 +137,19 @@ def moving_average_strategy(symbol, short_window, long_window):
     if latest_data['Short_MA'] > latest_data['Long_MA']:  
         # Buy signal
         print(f"Buy signal for {symbol}")
+
+        # Check your existing position for the symbol
+        existing_position = api.get_position(symbol)
+
+        if existing_position is not None and int(existing_position.qty) >= 1:
+            print(f"You already own {existing_position.qty} shares of {symbol}. Skipping buy order.")
+            return
+
         try:
-            # Place a market order to buy 1 share of the symbol
+            # Place a market order to buy 3 shares of the symbol
             api.submit_order(
                 symbol=symbol,
-                qty=1,
+                qty=3,
                 side='buy',
                 type='market',
                 time_in_force='gtc'  # Good Till Cancelled
@@ -142,11 +160,21 @@ def moving_average_strategy(symbol, short_window, long_window):
     elif latest_data['Short_MA'] < latest_data['Long_MA']:  
         # Sell signal
         print(f"Sell signal for {symbol}")
+        # Check your existing position for the symbol
+        existing_position = api.get_position(symbol)
+
+        if existing_position is None:
+            print(f"You don't own any shares of {symbol}. Skipping sell order.")
+            return
+
+        if existing_position is not None and int(existing_position.qty) <= 3:
+            print(f"Selling {existing_position.qty} shares of {symbol}...")
+            return
         try:
-            # Place a market order to sell 1 share of the symbol
+            # Place a market order to sell 3 shares of the symbol
             api.submit_order(
                 symbol=symbol,
-                qty=1,
+                qty=int(existing_position.qty) | 3,
                 side='sell',
                 type='market',
                 time_in_force='gtc'  # Good Till Cancelled
@@ -176,7 +204,7 @@ while True:
             print_current_positions()
 
             # Run the strategy
-            moving_average_strategy('AAPL', short_window=40, long_window=100)
+            moving_average_strategy(symbol, short_window, long_window)
         else:
             time.sleep(1) 
         

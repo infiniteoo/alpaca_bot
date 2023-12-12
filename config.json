@@ -1,0 +1,6 @@
+{
+  "symbol": "AAPL",
+  "short_window": 10,
+  "long_window": 50,
+  "lookback": 20
+}
