@@ -74,10 +74,10 @@ def scalping_strategy(symbol, target_profit, stop_loss, max_trades_per_day):
 while True:
     try:
         # Define your scalping parameters
-        symbol = ' URNM'  # The stock you want to scalp
+        symbol = 'URNM'  # The stock you want to scalp
         target_profit = 0.005  # 0.5% target profit
         stop_loss = 0.003  # 0.3% stop loss
-        max_trades_per_day = 3  # Maximum trades per day
+        max_trades_per_day = 10  # Maximum trades per day
 
         # Execute the scalping strategy
         scalping_strategy(symbol, target_profit, stop_loss, max_trades_per_day)

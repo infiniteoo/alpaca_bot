@@ -211,8 +211,8 @@ while True:
             time.sleep(1) 
         
     except KeyboardInterrupt:
-        print(f"{c.RED}Exiting the trading bot.{c.RESET}")
+        print(f"{c.red('Exiting the trading bot.')}")
         break
     except Exception as e:
-        print(f"{c.RED}An error occurred: {e}{c.RESET}")
+        print(f"{c.red('An error occurred: {e}')}")
         time.sleep(300)  # Wait before retrying
