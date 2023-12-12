@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import requests
 import time
 from Colors import Colors as c
+import sys
 
 # Load environment variables
 load_dotenv()
@@ -134,18 +135,34 @@ def moving_average_strategy(symbol, short_window, long_window):
             })
         print(response.text)
 
+interval_seconds = 60  
+next_run_time = time.time() + interval_seconds
+
 # Main loop
 while True:
     try:
-         # Print account and position details
-        print_account_details()
-        print_current_positions()
-        # Run the strategy
-        moving_average_strategy('AAPL', short_window=40, long_window=100)
-        time.sleep(60)  # Wait for 1 minute
+       
+
+        time_remaining = next_run_time - time.time()
+        print(f"Time until next loop: {int(time_remaining)} seconds", end='\r')
+        sys.stdout.flush()
+
+
+        if time_remaining <= 0:
+            # Reset the next run time and execute the main logic
+            next_run_time = time.time() + interval_seconds
+             # Print account and position details
+            print_account_details()
+            print_current_positions()
+
+            # Run the strategy
+            moving_average_strategy('AAPL', short_window=40, long_window=100)
+        else:
+            time.sleep(1) 
+        
     except KeyboardInterrupt:
-        print("Exiting the trading bot.")
+        print(f"{c.RED}Exiting the trading bot.{c.RESET}")
         break
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"{c.RED}An error occurred: {e}{c.RESET}")
         time.sleep(300)  # Wait before retrying
