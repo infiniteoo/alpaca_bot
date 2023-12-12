@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import time
+from Colors import Colors as c
 
 # Load environment variables
 load_dotenv()
@@ -26,11 +27,52 @@ headers = {
 # Initialize Alpaca API
 api = tradeapi.REST(API_KEY, API_SECRET, BASE_URL, api_version='v1')
 
-# Function to check if the market is open
-def is_market_open(api):
+# Function to print account details
+def print_account_details():
     try:
-        clock = api.get_clock()
-        return clock.is_open
+        modifier = f"v1/trading/accounts/{account_id}/account"
+        response = requests.get(url + modifier, headers=headers)
+        account = response.json()
+
+        """  print('account', account) """
+        print("\nAccount Details:")
+        print(f"Cash: {c.GREEN}${c.RESET}{account['cash']}")
+        print(f"Buying Power: {c.GREEN}${c.RESET}{account['buying_power']}")
+        print(f"Day Trade Count: {account['daytrade_count']}")
+        """ print(f"Balance As Of: {account['balance_asof']}")
+        print(f"Previous Close: {account['previous_close']}") """
+        print(f"Last Initial Margin: {c.GREEN}${c.RESET}{account['last_initial_margin']}")
+        print(f"Last Long Market: {c.GREEN}${c.RESET}{account['last_long_market_value']}")
+        print(f"Last Short Market: {c.GREEN}${c.RESET}{account['last_short_market_value']}")
+        print(f"Day Change: {float(account['equity']) - float(account['last_equity'])} ({c.GREEN}${c.RESET}{account['last_equity']})")
+        print(f"% Change: {((float(account['equity']) / float(account['last_equity'])) - 1) * 100:.2f}%\n")
+    except Exception as e:
+        print(f"Error fetching account details: {e}")
+
+# Function to print current positions
+def print_current_positions():
+    try:
+        modifier = f"v1/trading/accounts/{account_id}/positions"
+        positions = requests.get(url + modifier, headers=headers)
+        positions = positions.json()
+        """ print('positions', positions) """
+        if positions:
+            print(f"{c.GREEN}Current Positions:{c.RESET}")
+            for position in positions:
+                print(f"{c.YELLOW}{position.symbol}: {c.MAGENTA}{position.qty} shares at {c.GREEN}${position.avg_entry_price}{c.RESET}")
+        else:
+            print(f"{c.MAGENTA}No current positions.{c.RESET}")
+    except Exception as e:
+        print(f"Error fetching current positions: {e}")
+
+# Function to check if the market is open
+def is_market_open():
+    try:
+        modifier = f"v1/clock"
+        clock = requests.get(url + modifier, headers=headers)
+        clock = clock.json()
+        """  print('clock', clock) """
+        return clock['is_open']
     except Exception as e:
         print(f"Error checking market status: {e}")
         return False
@@ -56,8 +98,8 @@ def calculate_moving_averages(data, short_window, long_window):
 
 # Implement the strategy
 def moving_average_strategy(symbol, short_window, long_window):
-    if not is_market_open(api):  # Check if market is open
-        print("Market is not open. Skipping trade execution.")
+    if not is_market_open():  # Check if market is open
+        print(f"{c.RED}Market is not open. Skipping trade execution. {c.RESET}")
         return
     data = get_historical_data(symbol)
     if data is None:
@@ -95,6 +137,9 @@ def moving_average_strategy(symbol, short_window, long_window):
 # Main loop
 while True:
     try:
+         # Print account and position details
+        print_account_details()
+        print_current_positions()
         # Run the strategy
         moving_average_strategy('AAPL', short_window=40, long_window=100)
         time.sleep(60)  # Wait for 1 minute
