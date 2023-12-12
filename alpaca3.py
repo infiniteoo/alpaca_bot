@@ -183,6 +183,8 @@ def moving_average_strategy(symbol, short_window, long_window):
         except Exception as e:
             print(f"Error placing sell order: {e}")
 
+
+
 interval_seconds = 15  
 next_run_time = time.time() + interval_seconds
 
